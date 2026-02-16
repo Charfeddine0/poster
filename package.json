@@ -3,7 +3,10 @@
   "version": "1.1.0",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js"
+    "start": "node main.js",
+    "reddit": "node redit.js",
+    "linkedin": "node linkdin.js",
+    "instagram": "node instagram.js"
   },
   "dependencies": {
     "puppeteer": "^23.0.0",
