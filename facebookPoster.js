@@ -52,23 +52,47 @@ async function postToFacebook(content, imagePath = null) {
 
     await page.waitForTimeout(randomDelay(3000, 7000));
 
-    console.log('الذهاب للصفحة...');
-    await page.goto(config.FACEBOOK_PAGE_URL, { waitUntil: 'networkidle2' });
+    const targetUrl = process.env.FACEBOOK_GROUP_URL || 'https://www.facebook.com/groups/1772001620156113';
+    console.log('الذهاب للمجموعة...');
+    await page.goto(targetUrl, { waitUntil: 'networkidle2' });
 
-    // فتح صندوق المنشور
-    const createPostSel = [
-      '[aria-label="ما الذي يدور في بالك؟"]',
-      '[aria-label="أنشئ منشورًا"]',
-      '[role="button"][aria-label*="post"]'
-    ].join(',');
+    // الخطوة 1: فتح composer
+    await page.waitForSelector('span', { timeout: 45000 });
+    const clickedComposer = await page.evaluate(() => {
+      const trigger = Array.from(document.querySelectorAll('span')).find(
+        el => el.textContent?.trim() === 'Quoi de neuf, Confort ?'
+      );
 
-    await page.waitForSelector(createPostSel, { timeout: 45000 });
-    await page.click(createPostSel);
+      if (trigger) {
+        trigger.click();
+        return true;
+      }
+
+      return false;
+    });
+
+    if (!clickedComposer) {
+      throw new Error('لم أجد زر فتح الناشر Quoi de neuf, Confort ?');
+    }
 
     await page.waitForTimeout(randomDelay(1800, 4200));
 
-    // كتابة النص بشكل بشري
-    await humanType(page, '[role="textbox"][contenteditable="true"]', content);
+    // الخطوة 2: اختيار النشر المجهول
+    await page.evaluate(() => {
+      const anonymousButton = Array.from(document.querySelectorAll('span')).find(
+        el => el.textContent?.trim() === 'Envoyer une publication anonyme…'
+      );
+      anonymousButton?.click();
+    });
+
+    await page.waitForTimeout(randomDelay(1200, 2600));
+
+    // الخطوة 3/4: كتابة النص
+    await humanType(
+      page,
+      'div[contenteditable="true"][aria-placeholder="Envoyer une publication anonyme…"], [role="textbox"][contenteditable="true"]',
+      content
+    );
 
     await page.waitForTimeout(randomDelay(...config.AFTER_TYPE_WAIT));
 
@@ -82,16 +106,31 @@ async function postToFacebook(content, imagePath = null) {
       }
     }
 
-    // النقر على "نشر"
+    // الخطوة 5: النقر على "Envoyer"
     console.log('جاري النشر...');
-    const publishBtnSel = [
-      'div[aria-label="نشر"]:not([aria-disabled="true"])',
-      'div[aria-label="Post"]:not([aria-disabled="true"])',
-      '[role="button"][aria-label*="نشر"]'
-    ].join(',');
+    const clickedPublish = await page.evaluate(() => {
+      const sendSpan = Array.from(document.querySelectorAll('span')).find(
+        el => el.textContent?.trim() === 'Envoyer'
+      );
 
-    const btn = await page.waitForSelector(publishBtnSel, { visible: true, timeout: 20000 });
-    await page.evaluate(el => el.click(), btn);
+      if (!sendSpan) {
+        return false;
+      }
+
+      const buttonRoot = sendSpan.closest('div[role="none"]');
+      if (buttonRoot) {
+        buttonRoot.click();
+        return true;
+      }
+
+      const nearestButtonLike = sendSpan.closest('[role="button"], button, div');
+      nearestButtonLike?.click();
+      return true;
+    });
+
+    if (!clickedPublish) {
+      throw new Error('لم أجد زر Envoyer لإرسال المنشور');
+    }
 
     await page.waitForTimeout(randomDelay(...config.AFTER_CLICK_PUBLISH_WAIT));
 

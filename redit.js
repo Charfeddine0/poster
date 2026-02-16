@@ -36,12 +36,15 @@ async function openRedditAndCreatePost(postText = process.env.POST_TEXT || 'من
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1366, height: 768 });
-    await page.goto('https://www.reddit.com/submit', { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.goto('https://www.reddit.com/r/petfood01/submit/?type=TEXT', {
+      waitUntil: 'domcontentloaded',
+      timeout: 45000
+    });
 
     await page.waitForTimeout(randomDelay(1500, 3000));
 
     // عنوان المنشور
-    await humanType(page, 'textarea[name="title"]', `Post ${Date.now()}`);
+    await humanType(page, '#innerTextArea, textarea[name="title"]', `Post ${Date.now()}`);
 
     // اختيار نوع Text post
     await clickFirst(page, [
@@ -51,11 +54,12 @@ async function openRedditAndCreatePost(postText = process.env.POST_TEXT || 'من
     ]).catch(() => null);
 
     // نص المنشور
-    await humanType(page, 'div[contenteditable="true"]', postText);
+    await humanType(page, 'div[slot="rte"][name="body"][contenteditable="true"], div[contenteditable="true"]', postText);
 
     // محاكاة النقر على زر Post
     await page.waitForTimeout(randomDelay(1200, 2500));
     await clickFirst(page, [
+      '#inner-post-submit-button',
       'button[type="submit"]',
       'button[data-testid="post-submit-button"]',
       'button[aria-label="Post"]'
