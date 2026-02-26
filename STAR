@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""مشغل المشروع باستخدام بايثون.
+
+يقوم بتنزيل/تحديث الاعتمادات (npm install) ثم تشغيل المشروع (npm start).
+"""
+
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+
+
+def run(cmd: list[str]) -> None:
+    print("$", " ".join(cmd), flush=True)
+    subprocess.run(cmd, check=True)
+
+
+def main() -> int:
+    npm_path = shutil.which("npm")
+    if not npm_path:
+        print("❌ npm غير موجود. ثبّت Node.js أولاً.", file=sys.stderr)
+        return 1
+
+    try:
+        print("⬇️ تحميل كل الاعتمادات...")
+        run([npm_path, "install"])
+
+        print("🚀 تشغيل المشروع...")
+        run([npm_path, "start"])
+        return 0
+    except subprocess.CalledProcessError as exc:
+        print(f"❌ فشل التنفيذ (exit code: {exc.returncode})", file=sys.stderr)
+        return exc.returncode
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
