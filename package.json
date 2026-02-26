@@ -6,7 +6,8 @@
     "start": "node main.js",
     "reddit": "node redit.js",
     "linkedin": "node linkdin.js",
-    "instagram": "node instagram.js"
+    "instagram": "node instagram.js",
+    "star": "python3 STAR"
   },
   "dependencies": {
     "puppeteer": "^23.0.0",
